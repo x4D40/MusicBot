@@ -1,112 +1,43 @@
 const Discord = require('discord.js');
 const client = new Discord.Client();
-const config = require('./config.json');
-const  ytdl = require('ytdl-core');
+const {prefix, token} = require('./config.json');
+const fs = require('fs');
+const commands =  new Map();
+const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
 
-let voiceConnection = null;
-let audioStream = null;
-let playing = false;
-let queue = [];
-let currentSong = '';
-let paused = false;
+module.exports = {
+    commands
+}
 
-play = async (msg, song) => {
-
-    if(!song) {
-        msg.channel.send("The end of the queue has been reached.");
-        audioStream.destroy();
-        playing = false;
-        currentSong = '';
-        return;
-    }
-
-    playing = true;
-    audioStream = voiceConnection.play(ytdl(song.video_url, {filter: 'audioonly', highWaterMark: 1<<25, quality: 'highestaudio'}), {highWaterMark: 1});
-    msg.channel.send(`Now playing ${song.title}.`);
-    currentSong = song.title;
-
-    audioStream.on('finish', () => {
-        console.log('finish');
-        if(queue.length == 0) {
-            playing = false;
-        }else{
-            play(msg, queue.shift());
-        }
-    });
-
-    audioStream.on('error', (error) => {
-        console.log('error', error);
-    })
-};
+for(const file of commandFiles) {
+    const command = require(`./commands/${file}`);
+    commands.set(command.name, command);
+}
 
 client.on('message', async msg => {
-    if(msg.content.startsWith('!play')) {
-        const args = msg.content.split(' ');
-        let info = null;
+    if(!msg.content.startsWith(prefix) || msg.author.bot) return;
 
-        try{
-            info = await ytdl.getInfo(args[1]);
-        }catch {
-            msg.channel.send('No video found.');
-            return;
-        }
+    const args = msg.content.slice(prefix.length).split(/ +/);
+    const command = args.shift().toLowerCase();
 
-        if(!playing){
-            voiceConnection = await msg.member.voice.channel.join();
-            play(msg, info);
-        }else{
-            queue.push(info);
-            msg.channel.send(`Added ${info.title} to the queue.`);
-        }
-
-    }else if(msg.content === '!leave') {
-        if(voiceConnection) {
-            voiceConnection.disconnect();
-        }
-        queue = [];
-        paused = false;
-        playing = false;
-        currentSong = '';
-    }else if(msg.content === '!skip') {
-        if(!playing) {
-            msg.channel.send('No song is currently playing.');
-        }else if(queue) {
-            play(msg, queue.shift());
-        }
-    }else if(msg.content === '!pause') {
-        if(!playing && !paused)  {
-            msg.channel.send('No song is currently playing.');
-        }else{
-            audioStream.pause();
-            paused = true;
-        }
-    }else if(msg.content === '!resume') {
-        if(!paused) {
-            msg.channel.send('No song is currently paused.');
-        }else {
-            audioStream.resume();
-            paused = false;
-        }
-    }else if(msg.content === '!queue') {
-        let songs = `Current Song: ${currentSong}\n`;
-        let i = 1;
-
-        if(queue){
-            queue.map(song => songs += `${i++}) ${song.title}\n`);
-        }else{
-            songs += 'There are no songs in the queue.';
-        }
-
-        msg.channel.send(songs);
-
-    }else if(msg.content === '!help') {
-        msg.channel.send('Commands:\n!play <youtube link>: adds the song to the queue.\n!leave.\n!skip\n!pause\n!resume\n!queue: shows the song queue.')
+    const cmd = commands.get(command);
+    if(cmd){
+        cmd.execute(msg, args);
+    }else{
+        msg.channel.send(`Command not found. Type ${prefix}help for help.`);
     }
 
+    
 });
 
 client.on('ready', () => {
     console.log('ready');
+    client.user.setPresence({
+        activity: {
+            name: '!help'
+        },
+        status: 'online'
+    });
 });
 
-client.login(config.token);
+client.login(token);
