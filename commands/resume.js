@@ -7,8 +7,8 @@ module.exports = {
     async execute(msg, args) {
         const serverInfo = queue.getServerInfo(msg.guild.id);
 
-        if(serverInfo && serverInfo.paused && serverInfo.voice) {
-            serverInfo.voice.resume();
+        if(serverInfo && serverInfo.paused && serverInfo.audio) {
+            serverInfo.audio.resume();
             serverInfo.paused = false;
         }else{
             msg.channel.send('No song is currently paused.');

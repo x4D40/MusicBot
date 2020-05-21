@@ -37,7 +37,7 @@ module.exports = {
                     serverInfo.voice = await msg.member.voice.channel.join();
                     this.play(msg, serverInfo, serverInfo.songs.shift());
                 }else {
-                    msg.channel.send('idk wtf channel u in');
+                    msg.channel.send('You need to join a voice channel first.');
                 }
             }else{
                 // already playing, just add to queue
@@ -65,7 +65,7 @@ module.exports = {
                 msg.channel.send('The end of the queue has been reached.');
                 disconnect(serverInfo);
             }else{
-                play(msg, serverInfo, serverInfo.songs.shift());
+                this.play(msg, serverInfo, serverInfo.songs.shift());
             }
         });
     

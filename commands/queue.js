@@ -25,8 +25,7 @@ module.exports = {
     async execute(msg, args) {
         const serverInfo = queue.getServerInfo(msg.guild.id);
 
-        const info = await ytdl.getInfo(args[0]);
-        if(serverInfo.songs) {
+        if(serverInfo && serverInfo.songs && serverInfo.currentSong) {
             let length = serverInfo.currentSong.length_seconds;
             let title = serverInfo.currentSong.title;
             let songList = `Currently playing: ${title} [${format(length)}]\n`;
