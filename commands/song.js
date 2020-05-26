@@ -8,7 +8,7 @@ module.exports = {
         const serverInfo = queue.getServerInfo(msg.guild.id);
         
         if(serverInfo && serverInfo.currentSong) {
-            msg.channel.send(`Now Playing: ${serverInfo.currentSong} ${serverInfo.paused ? 'paused' : ''}`)
+            msg.channel.send(`Now Playing: ${serverInfo.currentSong.title} ${serverInfo.paused ? '`paused`' : ''}`)
         }else{
             msg.channel.send('No song is currently playing.');
         }

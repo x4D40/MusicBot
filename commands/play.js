@@ -19,32 +19,27 @@ module.exports = {
             return;
         }
 
-        // if the server name exists
-        if(serverName) {
+        // enqueue the song
+        queue.enqueue(serverName, info);
 
-            // enqueue the song
-            queue.enqueue(serverName, info);
+        // get the serverInfo object
+        const serverInfo = queue.getServerInfo(serverName);
 
-            // get the serverInfo object
-            const serverInfo = queue.getServerInfo(serverName);
+        // if that server has no song playing rn, start playing
+        if(!serverInfo.playing) {
 
-            // if that server has no song playing rn, start playing
-            if(!serverInfo.playing) {
-
-                // if they are in a channel
-                if(msg.member.voice.channel) {
-                    // join
-                    serverInfo.voice = await msg.member.voice.channel.join();
-                    this.play(msg, serverInfo, serverInfo.songs.shift());
-                }else {
-                    msg.channel.send('You need to join a voice channel first.');
-                }
-            }else{
-                // already playing, just add to queue
-                msg.channel.send(`Added ${info.title} to the queue.`);
+            // if they are in a channel
+            if(msg.member.voice.channel) {
+                // join
+                serverInfo.voice = await msg.member.voice.channel.join();
+                this.play(msg, serverInfo, serverInfo.songs.shift());
+            }else {
+                msg.channel.send('You need to join a voice channel first.');
+                serverInfo.songs = []; // dont add song to queue, if the bot is not currently in a channel
             }
         }else{
-            console.log('no id');
+            // already playing, just add to queue
+            msg.channel.send(`Added ${info.title} to the queue.`);
         }
 
     },
