@@ -60,17 +60,25 @@ client.on('ready', () => {
 
 client.login(token);
 
-app.post('/callback', (req, res) => {
+app.get('/callback', (req, res) => {
     console.log(req.body)
-    const chall = req.body["hub.challenge"];
+    const chall = req.query["hub.challenge"];
 
     if(chall) {
+        console.log('yes');
         res.type('text/plain');
         res.send(chall);
     }else {
+        console.log('no');
         res.end();
     }
 });
+
+app.post('/callback', (req, res) => {
+        console.log('webhook', req);
+        res.end();
+});
+
 
 app.listen(3000, () => {
     console.log('server up')

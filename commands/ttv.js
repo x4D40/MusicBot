@@ -27,7 +27,7 @@ module.exports = {
                         axios.get(`https://api.twitch.tv/helix/users?login=${args[1]}`, config).then(response => {
                             if(response.data.data[0]) {
                                 const body = {
-                                    "hub.callback": `https://${host}`,
+                                    "hub.callback": `http://${host}/callback`,
                                     "hub.mode": "subscribe",
                                     "hub.topic": `https://api.twitch.tv/helix/streams?user_id=${response.data.data[0].id}`,
                                     "hub.lease_seconds": 864000
