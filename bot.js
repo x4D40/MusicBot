@@ -4,9 +4,27 @@ const {prefix, token} = require('./config.json');
 const fs = require('fs');
 const commands =  new Map();
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
+const express = require('express');
+const app = express();
+const sqlite = require('sqlite3').verbose();
+
+const db = new sqlite.Database('./bot.db', (err) => { 
+    if(err) process.exit(111)
+    else {
+        db.exec('create table if not exists servers (id text primary key, channel text)' , (err) => {
+            if(err) {
+                console.log(err);
+                process.exit(222);
+            }
+        });
+    }
+});
+
+app.use(express.json());
 
 module.exports = {
-    commands
+    commands,
+    db
 }
 
 for(const file of commandFiles) {
@@ -41,3 +59,20 @@ client.on('ready', () => {
 });
 
 client.login(token);
+
+app.post('/callback', (req, res) => {
+    console.log(req.body)
+    const chall = req.body["hub.challenge"];
+
+    if(chall) {
+        res.type('text/plain');
+        res.send(chall);
+    }else {
+        res.end();
+    }
+});
+
+app.listen(3000, () => {
+    console.log('server up')
+});
+
