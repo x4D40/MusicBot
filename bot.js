@@ -91,7 +91,7 @@ app.get('/callback', (req, res) => {
         res.send(chall);
 
         // get the channel and server id for the webhook if they are waiting on webhook confirm
-        db.get('select server_id, channel from alerts, servers where streamer_id = ? and valid = 0 and server_id=id', id, (err, res) => {
+        db.all('select server_id, channel from alerts, servers where streamer_id = ? and valid = 0 and server_id=id', id, (err, res) => {
             if(!err){
 
                 db.run('update alerts set valid = 1 where streamer_id = ?', id, (err) => {

@@ -69,11 +69,11 @@ module.exports = {
 
                                     axios.post(`https://api.twitch.tv/helix/webhooks/hub`, body, config).then(res => {
                                         // since they werent in the database, mark the alert as not valid
-                                        db.run('insert into alerts(server_id, streamer_id, valid) values (?,?,0)', [msg.guild.id, args[1]], (err) => {
+                                        db.run('insert into alerts(server_id, streamer_id, valid) values (?,?,0)', [msg.guild.id, response.data.data[0].id], (err) => {
                                             if(err){
                                                 console.log(err);
                                             }else {
-                                                console.log(res);
+                                                //console.log(res);
                                                 msg.channel.send('You should see an alert in the notification channel shortly, if you do not recieve a notification please try again.');
                                             }
                                         });
