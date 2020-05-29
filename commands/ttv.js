@@ -38,10 +38,17 @@ module.exports = {
                     const sql2 = 'select id from streams where name = ?'
                     db.get(sql2, args[1], (err, res) => {
 
+                        const config = {
+                            headers: {
+                                Authorization: `Bearer ${ttv_token}`,
+                                'Client-ID': `${ttv_id}`
+                            }
+                        }
+
                         // not cached
                         if(!res) {
                             axios.get(`https://api.twitch.tv/helix/users?login=${args[1]}`, config).then(response => {
-                                if(response.data.data[0]) {
+                                if(response.data.data[0] && response.data.data[0].id) {
                                     // add streamer into the database
                                     db.run('insert into streams(id, name) values(?,?)', [response.data.data[0].id, args[1]], (err) => {
                                         if(err){
@@ -51,14 +58,25 @@ module.exports = {
                                         }
                                     });
 
-                                    // since they werent in the database, mark the alert as not valid
-                                    db.run('insert into alerts(server_id, streamer_id, valid) values (?,?,0)', [msg.guild.id, args[1]], (err) => {
-                                        if(err){
-                                            console.log(err);
-                                        }else {
-                                            console.log('stored alert')
-                                        }
-                                    });
+                                    const body = {
+                                        "hub.callback": `http://${host}/callback`,
+                                        "hub.mode": "subscribe",
+                                        "hub.topic": `https://api.twitch.tv/helix/streams?user_id=${response.data.data[0].id}`,
+                                        "hub.lease_seconds": 864000
+                                    }
+
+                                    axios.post(`https://api.twitch.tv/helix/webhooks/hub`, body, config).then(res => {
+                                        // since they werent in the database, mark the alert as not valid
+                                        db.run('insert into alerts(server_id, streamer_id, valid) values (?,?,0)', [msg.guild.id, args[1]], (err) => {
+                                            if(err){
+                                                console.log(err);
+                                            }else {
+                                                console.log('stored alert')
+                                            }
+                                        });
+                                    }).catch(err => {
+                                        msg.channel.send('An error occured while trying to listen for this stream.');
+                                    })
                                 }else{
                                     msg.channel.send('An unknown error has occured.');
                                 }
@@ -92,7 +110,6 @@ module.exports = {
 
                 a.forEach(channel => {
                     if(channel.name === args[1] && channel.type === 'text') {
-                        console.log(channel);
                         foundChannel = channel;
                     }
                 });

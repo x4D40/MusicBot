@@ -18,7 +18,7 @@ const db = new sqlite.Database('./bot.db', (err) => {
             }
         });
 
-        db.exec('create table if not exists alerts (server_id text, streamer_id text, valid integer, primary key(server_id, name))' , (err) => {
+        db.exec('create table if not exists alerts (server_id text, streamer_id text, valid integer, primary key(server_id, streamer_id))' , (err) => {
             if(err) {
                 console.log(err);
                 process.exit(333);
