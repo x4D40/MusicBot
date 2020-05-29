@@ -75,7 +75,6 @@ client.on('ready', () => {
 client.login(token);
 
 app.get('/callback', (req, res) => {
-    console.log(req.body)
     const chall = req.query["hub.challenge"];
 
     if(!req.query["hub.topic"]) {
@@ -95,9 +94,9 @@ app.get('/callback', (req, res) => {
         db.get('select server_id, channel from alerts, servers where streamer_id = ? and valid = 0 and server_id=id', id, (err, res) => {
             if(!err){
 
-                db.run('update alerts set alert = 1 where streamer_id = ?', id, (err) => {
+                db.run('update alerts set valid = 1 where streamer_id = ?', id, (err) => {
                     if(!err) {
-                        console.log(res) // todo loop over these channels and sent message that it is good
+                        console.log('from database ->', res) // todo loop over these channels and sent message that it is good
                     }else {
                         console.log('update alerts error', err)
                     }
@@ -108,7 +107,7 @@ app.get('/callback', (req, res) => {
             }
         })
 
-    }else {
+    } else {
         // cant send message back, assume failed
         console.log('no', req);
         res.end();
@@ -117,7 +116,7 @@ app.get('/callback', (req, res) => {
 
 app.post('/callback', (req, res) => {
     // body will have the user id, and username, get all guild channels where the user id was found, and send them a message
-    console.log('webhook', req);
+    console.log('webhook ->', req.body.data);
     res.end();
 });
 
