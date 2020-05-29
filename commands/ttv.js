@@ -58,6 +58,8 @@ module.exports = {
                                         }
                                     });
 
+                                    // make post request to webhook endpoint
+
                                     const body = {
                                         "hub.callback": `http://${host}/callback`,
                                         "hub.mode": "subscribe",
@@ -71,14 +73,17 @@ module.exports = {
                                             if(err){
                                                 console.log(err);
                                             }else {
-                                                console.log('stored alert')
+                                                console.log(res);
+                                                msg.channel.send('You should see an alert in the notification channel shortly, if you do not recieve a notification please try again.');
                                             }
                                         });
                                     }).catch(err => {
                                         msg.channel.send('An error occured while trying to listen for this stream.');
                                     })
-                                }else{
-                                    msg.channel.send('An unknown error has occured.');
+                                }
+                                // didnt get the twitch id for some reason
+                                else{
+                                    msg.channel.send('An unknown error has occured while trying to get this twitch id.');
                                 }
                             }).catch(error => {
                                 msg.channel.send('An unknown error has occured. Please try again.');

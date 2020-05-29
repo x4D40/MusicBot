@@ -91,12 +91,13 @@ app.get('/callback', (req, res) => {
         res.type('text/plain');
         res.send(chall);
 
+        // get the channel and server id for the webhook if they are waiting on webhook confirm
         db.get('select server_id, channel from alerts, servers where streamer_id = ? and valid = 0 and server_id=id', id, (err, res) => {
             if(!err){
 
                 db.run('update alerts set alert = 1 where streamer_id = ?', id, (err) => {
                     if(!err) {
-                        console.log(res)
+                        console.log(res) // todo loop over these channels and sent message that it is good
                     }else {
                         console.log('update alerts error', err)
                     }
@@ -108,6 +109,7 @@ app.get('/callback', (req, res) => {
         })
 
     }else {
+        // cant send message back, assume failed
         console.log('no', req);
         res.end();
     }
