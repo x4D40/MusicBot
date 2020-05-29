@@ -97,6 +97,13 @@ app.get('/callback', (req, res) => {
                 db.run('update alerts set valid = 1 where streamer_id = ?', id, (err) => {
                     if(!err) {
                         console.log('from database ->', res) // todo loop over these channels and sent message that it is good
+                        res.forEach(entry => {
+
+                            const guild = client.guilds.resolve(entry.server_id);
+                            const channel = guild.channels.resolve(entry.channel);
+
+                            channel.send(`Stream configured.`)
+                        });
                     }else {
                         console.log('update alerts error', err)
                     }
