@@ -9,55 +9,85 @@ module.exports = {
 
         console.log(args);
 
+        // if given an argument
         if(args.length > 0) {
 
+            // if arg is add
             if(args[0] === 'add') {
-                const sql = 'select channel from servers where id = ?'
-                db.get(sql, msg.guild.id, (err, res) => {
-                    const channel = msg.guild.channels.resolve(res["channel"]);
+                const sql1 = 'select channel from servers where id = ?'
 
-                    if(channel) {
-                        const config = {
-                            headers: {
-                                Authorization: `Bearer ${ttv_token}`,
-                                'Client-ID': `${ttv_id}`
-                            }
-                        }
+                // get the guild channgel
+                db.get(sql1, msg.guild.id, (err, res) => {
 
-                        axios.get(`https://api.twitch.tv/helix/users?login=${args[1]}`, config).then(response => {
-                            if(response.data.data[0]) {
-                                const body = {
-                                    "hub.callback": `http://${host}/callback`,
-                                    "hub.mode": "subscribe",
-                                    "hub.topic": `https://api.twitch.tv/helix/streams?user_id=${response.data.data[0].id}`,
-                                    "hub.lease_seconds": 864000
-                                }
-
-                                axios.post(`https://api.twitch.tv/helix/webhooks/hub`, body, config).then(res => {
-                                    console.log('request sent')
-                                }).catch(err => {
-                                    console.log(err)
-                                    msg.channel.send('An error (2) has occured, please try again.')
-                                });
-
-                            }else{
-                                msg.channel.send('The username was not found.');
-                            }
-                        }).catch(err => {
-                            console.log(err)
-                            msg.channel.send('An error (1) has occured, please try again.')
-                        });
-
-                    }else{
+                    // if not setup yet
+                    if(!res) {
                         msg.channel.send(`Could not find an associated text channel for notifications. Use '${prefix}ttv channel <channel name>' to set.`);
+                        return;
                     }
 
+                    const channel = msg.guild.channels.resolve(res["channel"]);
+
+                    if(!channel) {
+                        msg.channel.send(`Could not find an associated text channel for notifications. Use '${prefix}ttv channel <channel name>' to set.`);
+                        return;
+                    }
+
+                    // channel has been found
+
+                    // check for the streamer in the cache
+                    const sql2 = 'select id from streams where name = ?'
+                    db.get(sql2, args[1], (err, res) => {
+
+                        // not cached
+                        if(!res) {
+                            axios.get(`https://api.twitch.tv/helix/users?login=${args[1]}`, config).then(response => {
+                                if(response.data.data[0]) {
+                                    // add streamer into the database
+                                    db.run('insert into streams(id, name) values(?,?)', [response.data.data[0].id, args[1]], (err) => {
+                                        if(err){
+                                            console.log(err);
+                                        }else {
+                                            console.log('stored streamer id')
+                                        }
+                                    });
+
+                                    // since they werent in the database, mark the alert as not valid
+                                    db.run('insert into alerts(server_id, streamer_id, valid) values (?,?,0)', [msg.guild.id, args[1]], (err) => {
+                                        if(err){
+                                            console.log(err);
+                                        }else {
+                                            console.log('stored alert')
+                                        }
+                                    });
+                                }else{
+                                    msg.channel.send('An unknown error has occured.');
+                                }
+                            }).catch(error => {
+                                msg.channel.send('An unknown error has occured. Please try again.');
+                            })
+                        }
+                        // else streamer was in cache
+                        else{
+                            // since the streamer was found, there is already a webhook for this, make it as valid
+                            db.run('insert into alerts(server_id, streamer_id, valid) values (?,?,1)', [msg.guild.id, args[1]], (err) => {
+                                if(err){
+                                    console.log(err);
+                                }else {
+                                    msg.channel.send('Alert configured.');
+                                }
+                            });
+                        }
+                    })
                 });
 
-            }else if(args[0] === 'channel') {
+            }
+            // if arg is channel
+            else if(args[0] === 'channel') {
 
                 const sql = 'replace into servers(id, channel) values(?,?)';
                 let foundChannel = null;
+
+                // get the channels
                 const a = msg.guild.channels.cache.array()
 
                 a.forEach(channel => {
@@ -67,9 +97,11 @@ module.exports = {
                     }
                 });
                 
+                // if we found the channel
                 if(foundChannel) {
 
-                    db.run(sql, [msg.guild.id, foundChannel.id], (result, err) => {
+                    // store in db as the callback channel
+                    db.run(sql, [msg.guild.id, foundChannel.id], (err) => {
                         if(!err) {
                             msg.channel.send(`Twitch notifications will be sent to the '${args[1]}' channel.`);
                         }else{
@@ -77,13 +109,19 @@ module.exports = {
                         }
                     });
 
-                }else{
+                }
+                // else channel was not found
+                else{
                     msg.channel.send('That channel name was not found. Make sure it is a text channel.');
                 }
 
-            }else if(args[0] === 'remove') {
+            }
+            // if arg is remove
+            else if(args[0] === 'remove') {
 
-            }else{
+            }
+            // else invalid arg
+            else{
                 console.log('send help here too')
             }
         }else{

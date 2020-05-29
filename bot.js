@@ -17,6 +17,20 @@ const db = new sqlite.Database('./bot.db', (err) => {
                 process.exit(222);
             }
         });
+
+        db.exec('create table if not exists alerts (server_id text, streamer_id text, valid integer, primary key(server_id, name))' , (err) => {
+            if(err) {
+                console.log(err);
+                process.exit(333);
+            }
+        });
+
+        db.exec('create table if not exists streams (id text primary key, name text)', err => {
+            if(err) {
+                console.log(err);
+                process.exit(444);
+            }
+        })
     }
 });
 
@@ -64,19 +78,45 @@ app.get('/callback', (req, res) => {
     console.log(req.body)
     const chall = req.query["hub.challenge"];
 
+    if(!req.query["hub.topic"]) {
+        res.end();
+    }
+
+    const id = req.query["hub.topic"].split('=')[1];
+
+    // call db to get the channel
     if(chall) {
+        //  mark the alerts table as 1 for all entries where streamerid is found in the request, send to channel its setup
         console.log('yes');
         res.type('text/plain');
         res.send(chall);
+
+        db.get('select server_id, channel from alerts, servers where streamer_id = ? and valid = 0 and server_id=id', id, (err, res) => {
+            if(!err){
+
+                db.run('update alerts set alert = 1 where streamer_id = ?', id, (err) => {
+                    if(!err) {
+                        console.log(res)
+                    }else {
+                        console.log('update alerts error', err)
+                    }
+                })
+
+            }else{
+                console.log('finding server error:', err);
+            }
+        })
+
     }else {
-        console.log('no');
+        console.log('no', req);
         res.end();
     }
 });
 
 app.post('/callback', (req, res) => {
-        console.log('webhook', req);
-        res.end();
+    // body will have the user id, and username, get all guild channels where the user id was found, and send them a message
+    console.log('webhook', req);
+    res.end();
 });
 
 
