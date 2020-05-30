@@ -126,9 +126,9 @@ app.post('/callback', (req, res) => {
     console.log('webhook ->', req.body.data);
 
 
-    if(req.body.data.data[0]) {
-        const id = req.body.data.data[0].user_id;
-        const name = req.body.data.data[0].user_name;
+    if(req.body.data[0]) {
+        const id = req.body.data[0].user_id;
+        const name = req.body.data[0].user_name;
 
         // select all of the alert channels
         db.all('select server_id, channel from alerts, servers where streamer_id = ? and valid = 1 and server_id=id', id, (err, res) => {
