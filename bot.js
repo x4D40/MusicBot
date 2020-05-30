@@ -124,6 +124,24 @@ app.get('/callback', (req, res) => {
 app.post('/callback', (req, res) => {
     // body will have the user id, and username, get all guild channels where the user id was found, and send them a message
     console.log('webhook ->', req.body.data);
+
+
+    if(req.body.data.data[0]) {
+        const id = req.body.data.data[0].user_id;
+        const name = req.body.data.data[0].user_name;
+
+        // select all of the alert channels
+        db.all('select server_id, channel from alerts, servers where streamer_id = ? and valid = 1 and server_id=id', id, (err, res) => {
+            res.forEach(entry => {
+
+                const guild = client.guilds.resolve(entry.server_id);
+                const channel = guild.channels.resolve(entry.channel);
+
+                channel.send(`Hey, ${name} just went live here: https://twitch.tv/${name}`);
+            });
+        });
+    }
+
     res.end();
 });
 
