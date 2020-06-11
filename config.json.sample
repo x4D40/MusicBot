@@ -1,0 +1,6 @@
+{
+    "token": "token here",
+    "prefix": "!",
+    "ttv_token": "twitch token",
+    "host": "where to send webhooks"
+}

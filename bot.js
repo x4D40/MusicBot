@@ -86,7 +86,6 @@ app.get('/callback', (req, res) => {
     // call db to get the channel
     if(chall) {
         //  mark the alerts table as 1 for all entries where streamerid is found in the request, send to channel its setup
-        console.log('yes');
         res.type('text/plain');
         res.send(chall);
 
@@ -116,14 +115,14 @@ app.get('/callback', (req, res) => {
 
     } else {
         // cant send message back, assume failed
-        console.log('no', req);
+        console.log('no challenge found', req);
         res.end();
     }
 });
 
 app.post('/callback', (req, res) => {
     // body will have the user id, and username, get all guild channels where the user id was found, and send them a message
-    console.log('webhook ->', req.body.data);
+    //console.log('webhook ->', req.body.data);
 
 
     if(req.body.data[0]) {
@@ -132,6 +131,7 @@ app.post('/callback', (req, res) => {
 
         // select all of the alert channels
         db.all('select server_id, channel from alerts, servers where streamer_id = ? and valid = 1 and server_id=id', id, (err, res) => {
+            console.log(res);
             res.forEach(entry => {
 
                 const guild = client.guilds.resolve(entry.server_id);
